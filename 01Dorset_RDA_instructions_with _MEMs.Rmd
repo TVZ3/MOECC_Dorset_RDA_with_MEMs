@@ -55,7 +55,11 @@ IF_chem <- select(chemistry, ends_with("IF"))
 IF_clim <- cbind(climate[, c(13, 26, 39)])
 ```
 
+<<<<<<< HEAD
 ### Selecting relative algal abundance data
+=======
+### Subsetting algae data by total biomass versus relative abundance
+>>>>>>> ba21f295ec5a0a017bbe589ee2c6228b91115f67
 ```{r}
 rel_al <- select(algae, ends_with("REL"))
 ```
