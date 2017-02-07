@@ -1,0 +1,139 @@
+---
+title: "RDA_instructions_with_variation_partitioning"
+author: "Thomas Van Zuiden"
+date: "February 7, 2017"
+output: html_document
+---
+
+#### Load required packages
+```{r warning=FALSE, message=FALSE}
+library(ade4)
+library(vegan)
+library(packfor)
+library(MASS)
+library(gclus)
+library(ape)
+library(ellipse)
+library(lmom)
+library(dplyr)
+library(tidyr)
+```
+
+#### #Import data from the CSV file
+```{r echo=FALSE}
+setwd("C:\\Users\\adminuser\\Desktop\\EVERYTHING THOMAS\\gitprojects\\MOECC_Dorset_RDA_with_MEMs")
+```
+```{r}
+dorset <- read.csv("03Dorset.csv")
+```
+
+
+### Droping columns with too many NAs (that would make the data set too small) and
+### some chemistry variables not important to the algal community
+```{r results="hide"}
+names(dorset)
+dorset <- dorset[, -c(16:19, 32:35, 44:55, 84:87, 100,101), drop=FALSE]
+dorset <- na.omit(dorset)
+names(dorset) ## Just checking to make sure I eliminated the right ones
+```
+
+
+### Subset the Dorset data into different categories of variables
+```{r}
+morphology <- cbind(dorset[, c(11:13)]) # Lake morphology variables
+chemistry <- cbind(dorset[, c(16:63)])  # Lake chemistry variables
+climate <- cbind(dorset[, c(83:121)])   # Climate data from Climatic Research Unit (CRU)
+algae <- cbind(dorset[, c(64:75)])      # Algae species biomass and relative percentage data
+mem <- cbind(dorset[, c(122:128)])      # Moran Eigenvector cycle variables
+year <- cbind(dorset[, c(15)])          # Column for year
+ID <- cbind(dorset[, c(1:5)])           # Lake ID by time, and names
+```
+
+### Subsetting environmental data further by season
+```{r}
+IF_chem <- select(chemistry, ends_with("IF"))
+IF_clim <- cbind(climate[, c(13, 26, 39)])
+```
+
+### Selecting relative algal abundance data
+```{r}
+rel_al <- select(algae, ends_with("REL"))
+```
+
+### Data transformations
+```{r}
+rel_spe_hel = decostand(rel_al, "hellinger")      # Algal biomass data Hellinger-transformed
+morpho_std = decostand(morphology, "standardize") # Morphology standardized
+IF_chem_std = decostand(IF_chem, "standardize")   # Ice free chemistry standardized
+IF_clim_std = decostand(IF_clim, "standardize")   # Ice free climate standardized
+```
+
+### Creating a dataframe with all variables of interest to run through Forward Selection
+```{r}
+icefree <- data.frame(morpho_std, IF_chem_std, IF_clim_std, mem)
+forward.sel(rel_spe_hel, icefree)
+```
+
+#### The above "icefree" dataframe does not contain non-numeric values because forward selection cannot handle them. Below, I have re-created the "icefree" dataframe after forward selection to include non-numeric values (which will not be going into the model but used to create a legend)
+```{r}
+icefree <- data.frame(ID, mem, morpho_std, IF_chem_std, IF_clim_std)
+```
+
+### RDA Creation
+#### RDA of Hellinger-transformated species data constrained by non-collinear predictor variables that 
+#### came out as important in the above forward selection procedure
+```{r}
+par(mfrow=c(1,1))
+mod <- rda(rel_spe_hel ~ zmax+pH_IF+Cl_IF+A0+NH4_IF+TN_IF+NO3_IF+Cond_IF+IF_Cloud+IF_Precip+IF_MeanTemp+PCNM2+PCNM4+PCNM9+PCNM3+PCNM8+PCNM17, data=icefree, scale=FALSE)
+plot(mod, type = "n", scaling = 2)
+colvec <- c("blue","dodgerblue3","cyan","darkseagreen1","yellow2","goldenrod1","orange","tomato","red2")
+with(icefree, levels(Bin_Time))
+text(mod, display = "species", cex = 0.8, col = "black")
+with(icefree, points(mod, display = "sites", col = adjustcolor(colvec[Bin_Time], alpha=0.8),
+                     scaling = 2, pch = 18, cex = 0.7, bg = colvec[Bin_Time]))
+text(mod, scaling = 2, display = "bp", col = "blue", cex = 0.8) 
+with(icefree, legend("topright", legend = levels(Bin_Time), bty = "n",
+                     col = colvec, pch = 18, cex = 1.0, pt.bg = colvec))
+```
+
+#### Unadjusted R^2 retrieved from the RDA result
+```{r}
+(R2 <- RsquareAdj(mod)$r.squared)
+```
+### Adjusted R^2 retrieved from the RDA result 
+```{r}
+(R2adj <- RsquareAdj(mod)$adj.r.squared)
+```
+
+### Check if there are any variables inflating variation in the RDA model
+##### If the following analysis yields any values > 10, the constraint (variable) is redundant and can be eliminated
+```{r}
+vif.cca(mod)
+```
+
+### Variation Partitioning 
+#### Note: It is the "individual fractions" section from the output (e.g. a,b,c,d,e,f, ... o) we are interested in
+```{r results="hide"}
+colnames(icefree)
+v.morph <- cbind(icefree[, c(13, 15)])             #X1 - morphology variables
+v.chem <- cbind(icefree[, c(17, 18, 21:23, 27)])   #X2 - lake chemistry variables
+v.clim <- cbind(icefree[, c(28:30)])               #X3 - climate variables
+v.mem <- cbind(icefree[, c(6:8, 10:12)])           #X4 - Eigenvector variables
+```
+###### .
+
+#### X1 - morphology variables
+#### X2 - lake chemistry variables
+#### X3 - climate variables
+#### X4 - Eigenvector variables
+```{r}
+(x <- varpart(rel_spe_hel,v.morph,v.chem,v.clim,v.mem))
+```
+#### .
+
+#### Run the following function to determine which individual fractions explain overlapping variation
+##### E.G. We see below that "e" is the overlap between X1 (morphology) and X2 (Chemistry). We can see
+##### above that "e" explains 7.95% (0.0795)  of the variation in the model
+```{r}
+showvarparts(4)
+```
