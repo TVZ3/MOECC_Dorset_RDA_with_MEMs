@@ -28,8 +28,7 @@ dorset <- read.csv("03Dorset.csv")
 ```
 
 
-### Droping columns with too many NAs (that would make the data set too small) and
-### some chemistry variables not important to the algal community
+### Droping columns with too many NAs (that would make the data set too small) and some chemistry variables not important to the algal community
 ```{r results="hide"}
 names(dorset)
 dorset <- dorset[, -c(16:19, 32:35, 44:55, 84:87, 100,101), drop=FALSE]
@@ -81,8 +80,7 @@ icefree <- data.frame(ID, mem, morpho_std, IF_chem_std, IF_clim_std)
 ```
 
 ### RDA Creation
-#### RDA of Hellinger-transformated species data constrained by non-collinear predictor variables that 
-#### came out as important in the above forward selection procedure
+#### RDA of Hellinger-transformated species data constrained by non-collinear predictor variables that came out as important in the above forward selection procedure
 ```{r}
 par(mfrow=c(1,1))
 mod <- rda(rel_spe_hel ~ zmax+pH_IF+Cl_IF+A0+NH4_IF+TN_IF+NO3_IF+Cond_IF+IF_Cloud+IF_Precip+IF_MeanTemp+PCNM2+PCNM4+PCNM9+PCNM3+PCNM8+PCNM17, data=icefree, scale=FALSE)
@@ -133,8 +131,7 @@ v.mem <- cbind(icefree[, c(6:8, 10:12)])           #X4 - Eigenvector variables
 #### .
 
 #### Run the following function to determine which individual fractions explain overlapping variation
-##### E.G. We see below that "e" is the overlap between X1 (morphology) and X2 (Chemistry). We can see
-##### above that "e" explains 7.95% (0.0795)  of the variation in the model
+##### E.G. We see below that "e" is the overlap between X1 (morphology) and X2 (Chemistry). We can see above that "e" explains 7.95% (0.0795)  of the variation in the model
 ```{r}
 showvarparts(4)
 ```
