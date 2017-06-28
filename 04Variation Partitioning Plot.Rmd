@@ -1,12 +1,12 @@
 ---
-title: "Variation Partitioning Bar Graph RMD"
+title: "Variation Partitioning Bar Graph Rmd"
 author: "Thomas Van Zuiden"
 date: "June 28, 2017"
 output: html_document
 ---
 
 ## Using outputs from the Varition partitioning to create a good figure
-#### These numbers are all from the results of the varpart analysis in the other RMD and html
+#### These numbers are all from the results of the varpart analysis in the other Rmd and html
 ```{r}
 # morphology explains 0.04/0.386 =~10% of the 38% explained by the model.
 # This will go in the first bar in the bar graph below
